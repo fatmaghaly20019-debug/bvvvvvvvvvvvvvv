@@ -36,6 +36,8 @@ export const UserDashboard = ({ userType, username }: UserDashboardProps) => {
 
   const fetchCustomerData = async () => {
     try {
+      console.log('Searching for:', { userType, username }); // للتتبع
+      
       let query = supabase.from('customers').select(`
         id, customer_name, mobile_number, line_type, charging_date, 
         renewal_date, arrival_time, provider, ownership, payment_status, 
@@ -43,21 +45,30 @@ export const UserDashboard = ({ userType, username }: UserDashboardProps) => {
       `);
       
       if (userType === "multiple") {
-        // For multiple user, filter by customer name
-        query = query.eq('customer_name', username)
+        // For multiple user, filter by customer name (case insensitive)
+        query = query.ilike('customer_name', `%${username}%`)
           .order('charging_date', { ascending: false })
           .order('line_type', { ascending: true });
       } else if (userType === "single") {
         // For single user, filter by mobile number
-        query = query.eq('mobile_number', parseInt(username));
+        const mobileNumber = parseInt(username.replace(/\D/g, '')); // إزالة أي أحرف غير رقمية
+        if (!isNaN(mobileNumber)) {
+          query = query.eq('mobile_number', mobileNumber);
+        } else {
+          console.error('Invalid mobile number:', username);
+          setCustomers([]);
+          return;
+        }
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
+      console.log('Fetched data:', data); // للتأكد من البيانات
       setCustomers(data || []);
     } catch (error) {
       console.error('Error fetching customer data:', error);
+      setCustomers([]);
     } finally {
       setLoading(false);
     }

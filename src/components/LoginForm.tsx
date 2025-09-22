@@ -52,7 +52,7 @@ export const LoginForm = ({ onLogin }: LoginFormProps) => {
         // For single user, username should be a mobile number, no password required
         if (username) {
           isValid = true;
-          actualUsername = username;
+          actualUsername = username.trim(); // إزالة المسافات الزائدة
         }
       }
 
