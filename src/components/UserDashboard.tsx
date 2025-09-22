@@ -36,8 +36,6 @@ export const UserDashboard = ({ userType, username }: UserDashboardProps) => {
 
   const fetchCustomerData = async () => {
     try {
-      console.log('Searching for:', { userType, username }); // للتتبع
-      
       let query = supabase.from('customers').select(`
         id, customer_name, mobile_number, line_type, charging_date, 
         renewal_date, arrival_time, provider, ownership, payment_status, 
@@ -50,15 +48,8 @@ export const UserDashboard = ({ userType, username }: UserDashboardProps) => {
           .order('charging_date', { ascending: false })
           .order('line_type', { ascending: true });
       } else if (userType === "single") {
-        // For single user, filter by mobile number
-        const mobileNumber = parseInt(username.replace(/\D/g, '')); // إزالة أي أحرف غير رقمية
-        if (!isNaN(mobileNumber)) {
-          query = query.eq('mobile_number', mobileNumber);
-        } else {
-          console.error('Invalid mobile number:', username);
-          setCustomers([]);
-          return;
-        }
+        // For single user, filter by mobile number (convert to string for comparison)
+        query = query.eq('mobile_number', username);
       }
 
       const { data, error } = await query;
@@ -68,7 +59,6 @@ export const UserDashboard = ({ userType, username }: UserDashboardProps) => {
       setCustomers(data || []);
     } catch (error) {
       console.error('Error fetching customer data:', error);
-      setCustomers([]);
     } finally {
       setLoading(false);
     }
@@ -136,7 +126,15 @@ export const UserDashboard = ({ userType, username }: UserDashboardProps) => {
   if (customers.length === 0) {
     return (
       <div className="text-center py-12 animate-fade-in">
-        <div className="text-muted-foreground text-lg">لا توجد بيانات متاحة</div>
+        <div className="text-muted-foreground text-lg mb-4">
+          {userType === "single" 
+            ? `لا توجد بيانات لرقم الموبايل: ${username}`
+            : `لا توجد بيانات للعميل: ${username}`
+          }
+        </div>
+        <div className="text-sm text-muted-foreground">
+          تأكد من صحة البيانات المدخلة أو تواصل مع الإدارة
+        </div>
       </div>
     );
   }
